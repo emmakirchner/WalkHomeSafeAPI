@@ -36,7 +36,7 @@ public class ReportCategoriesController(ICategoryService categoryService) : Cont
     /// <summary>
     /// Deletes a report category.
     /// </summary>
-    [HttpPut]
+    [HttpDelete("{id}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public ActionResult Delete(int id)

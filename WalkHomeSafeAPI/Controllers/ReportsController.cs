@@ -38,7 +38,7 @@ public class ReportsController(IReportService reportService) : Controller
     /// <summary>
     /// Deletes a report.
     /// </summary>
-    [HttpPut]
+    [HttpDelete("{id}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public ActionResult Delete(int id)
