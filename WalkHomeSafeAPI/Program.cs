@@ -1,13 +1,11 @@
 using Microsoft.EntityFrameworkCore;
 using WalkHomeSafeAPI.Data;
+using WalkHomeSafeAPI.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllers();
-
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(
@@ -15,13 +13,20 @@ builder.Services.AddDbContext<AppDbContext>(options =>
             x => x.UseNetTopologySuite()
     ));
 
+builder.Services.AddScoped<IReportService, ReportService>();
+builder.Services.AddScoped<ICategoryService, CategoryService>();
+
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+app.UseSwagger();
+app.UseSwaggerUI(options =>
 {
-    app.MapOpenApi();
-}
+    options.SwaggerEndpoint("/swagger/v1/swagger.json", "API v1");
+    options.RoutePrefix = string.Empty;
+});
 
 app.UseHttpsRedirection();
 
