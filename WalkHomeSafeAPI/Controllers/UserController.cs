@@ -1,26 +1,25 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WalkHomeSafeAPI.Extensions;
-using WalkHomeSafeAPI.Models.DTOs.Save;
 using WalkHomeSafeAPI.Services;
 
 namespace WalkHomeSafeAPI.Controllers;
 
-[ApiController]
-[Route("api/report-votes")]
-[Produces("application/json")]
 
-public class ReportVotesController(IReportService reportService) : Controller
+[ApiController]
+[Route("api/users")]
+[Produces("application/json")]
+public class UserController(IUserService userService) : Controller
 {
     /// <summary>
-    /// Creates or updates a user's votes for reports.
+    /// Deletes an user.
     /// </summary>
-    [HttpPut]
+    [HttpDelete]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [Authorize]
-    public ActionResult CreateOrUpdate([FromBody] IReadOnlyCollection<SaveReportVoteDto> votes)
+    public ActionResult Delete()
     {
         var user = User.GetUserInfo();
         if (user == null)
@@ -28,7 +27,7 @@ public class ReportVotesController(IReportService reportService) : Controller
             return Unauthorized();
         }
 
-        var result = reportService.CreateOrUpdateVotes(user, votes);
-        return result ? Ok() : NotFound();
+        var result = userService.DeleteUser(user);
+        return result ? Ok() : BadRequest();
     }
 }

@@ -1,4 +1,6 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using WalkHomeSafeAPI.Data;
 using WalkHomeSafeAPI.Services;
 
@@ -13,8 +15,27 @@ builder.Services.AddDbContext<AppDbContext>(options =>
             x => x.UseNetTopologySuite()
     ));
 
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.Authority = "https://securetoken.google.com/walkhomesafe-firebase";
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = "https://securetoken.google.com/walkhomesafe-firebase",
+
+            ValidateAudience = true,
+            ValidAudience = "walkhomesafe-firebase",
+
+            ValidateLifetime = true
+        };
+    });
+
+
 builder.Services.AddScoped<IReportService, ReportService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
+builder.Services.AddScoped<IUserService, UserService>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -32,6 +53,7 @@ app.UseSwaggerUI(options =>
 
 app.UseHttpsRedirection();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();

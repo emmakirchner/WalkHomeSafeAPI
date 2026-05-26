@@ -1,13 +1,14 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using NetTopologySuite.Geometries;
 using WalkHomeSafeAPI.Data;
+using WalkHomeSafeAPI.Models.Context;
 using WalkHomeSafeAPI.Models.DTOs;
 using WalkHomeSafeAPI.Models.DTOs.Save;
 using WalkHomeSafeAPI.Models.Entities;
 
 namespace WalkHomeSafeAPI.Services
 {
-    public class ReportService(AppDbContext context) : IReportService
+    public class ReportService(AppDbContext context, IUserService userService) : IReportService
     {
         public IReadOnlyCollection<ReportDto> GetAll(LocationDto location)
         {
@@ -15,31 +16,36 @@ namespace WalkHomeSafeAPI.Services
             return ProjectToDto(entities).ToList();
         }
 
-        public bool Create(SaveReportDto saveReport)
+        public bool Create(AppUserContext user, SaveReportDto saveReport)
         {
-            var entity = ProjectToEntity(saveReport);
+            var userDbId = userService.GetUserIdFromDatabase(user);
+            if (userDbId == 0) return false;
+
+            var entity = ProjectToEntity(userDbId, saveReport);
             context.Reports.Add(entity);
             context.SaveChanges();
 
             return true;
         }
 
-        public bool Update(int id, SaveReportDto saveReport)
+        public bool Update(AppUserContext user, int id, SaveReportDto saveReport)
         {
             var dbEntity = GetBaseQuery(id).SingleOrDefault();
-            if (dbEntity is null) return false;
+            var userDbId = userService.GetUserIdFromDatabase(user);
+            if (dbEntity is null || userDbId == 0 || dbEntity.UserId != userDbId) return false;
 
-            dbEntity = ProjectToEntity(saveReport);
+            dbEntity = ProjectToEntity(userDbId, saveReport);
             context.Reports.Update(dbEntity);
             context.SaveChanges();
 
             return true;
         }
 
-        public bool Delete(int id)
+        public bool Delete(AppUserContext user, int id)
         {
             var dbEntity = GetBaseQuery(id).SingleOrDefault();
-            if (dbEntity is null) return false;
+            var userDbId = userService.GetUserIdFromDatabase(user);
+            if (dbEntity is null || userDbId == 0 || dbEntity.UserId != userDbId) return false;
 
             context.Reports.Remove(dbEntity);
             context.SaveChanges();
@@ -47,12 +53,12 @@ namespace WalkHomeSafeAPI.Services
             return true;
         }
 
-        public bool CreateOrUpdateVotes(string username, IReadOnlyCollection<SaveReportVoteDto> votes)
+        public bool CreateOrUpdateVotes(AppUserContext user, IReadOnlyCollection<SaveReportVoteDto> votes)
         {
-            var user = context.Users.SingleOrDefault(u => u.UserName == username);
-            if (user is null) return false;
+            var userDbId = userService.GetUserIdFromDatabase(user);
+            if (userDbId == 0) return false;
 
-            var userVotes = context.ReportVotes.Where(v => v.UserId == user.Id).ToList();
+            var userVotes = context.ReportVotes.Where(v => v.UserId == userDbId).ToList();
             List<ReportVoteEntity> newVotes = [];
             foreach (var vote in votes)
             {
@@ -75,7 +81,7 @@ namespace WalkHomeSafeAPI.Services
                 {
                     newVotes.Add(new ReportVoteEntity
                     {
-                        UserId = user.Id,
+                        UserId = userDbId,
                         ReportId = vote.ReportId,
                         IsUpvote = vote.IsUpvote.Value
                     });
@@ -119,7 +125,7 @@ namespace WalkHomeSafeAPI.Services
             => entities.Select(e => new ReportDto
             {
                 Id = e.Id,
-                UserName = e.User != null ? e.User.UserName : string.Empty,
+                UserName = e.User == null ? string.Empty : e.User.IsActive ? e.User.UserName : "Anonym",
                 Title = e.Title,
                 Description = e.Description,
                 Latitude = e.Latitude,
@@ -136,9 +142,10 @@ namespace WalkHomeSafeAPI.Services
                 DownvoteCount = e.Votes.Count(v => !v.IsUpvote)
             });
 
-        private ReportEntity ProjectToEntity(SaveReportDto saveReport)
-            => new ReportEntity // ToDo: get user id
+        private ReportEntity ProjectToEntity(int userDbId, SaveReportDto saveReport)
+            => new ReportEntity
             {
+                UserId = userDbId,
                 Title = saveReport.Title,
                 Description = saveReport.Description,
                 Latitude = saveReport.Latitude,
