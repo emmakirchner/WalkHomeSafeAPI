@@ -19,14 +19,14 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
-        options.Authority = "https://securetoken.google.com/walkhomesafe-firebase";
+        options.Authority = "https://securetoken.google.com/walkhomesafe-b4060";
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
-            ValidIssuer = "https://securetoken.google.com/walkhomesafe-firebase",
+            ValidIssuer = "https://securetoken.google.com/walkhomesafe-b4060",
 
             ValidateAudience = true,
-            ValidAudience = "walkhomesafe-firebase",
+            ValidAudience = "walkhomesafe-b4060",
 
             ValidateLifetime = true
         };
