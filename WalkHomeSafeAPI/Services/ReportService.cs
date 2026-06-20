@@ -62,6 +62,21 @@ namespace WalkHomeSafeAPI.Services
             return true;
         }
 
+        public IReadOnlyCollection<ReportVoteDto> GetVotesByUser(AppUserContext user)
+        {
+            var userDbId = userService.GetUserIdFromDatabase(user);
+            if (userDbId == 0) return [];
+
+            return context.ReportVotes
+                .Where(v => v.UserId == userDbId)
+                .Select(v => new ReportVoteDto
+                {
+                    ReportId = v.ReportId,
+                    IsUpvote = v.IsUpvote
+                })
+                .ToList();
+        }
+
         public bool CreateOrUpdateVotes(AppUserContext user, IReadOnlyCollection<SaveReportVoteDto> votes)
         {
             var userDbId = userService.GetUserIdFromDatabase(user);

@@ -10,6 +10,8 @@ public interface IReportService
 
     IReadOnlyCollection<ReportDto> GetReportsByUser(AppUserContext user);
 
+    IReadOnlyCollection<ReportVoteDto> GetVotesByUser(AppUserContext user);
+
     bool Create(AppUserContext user, SaveReportDto saveReport);
 
     bool Update(AppUserContext user, int id, SaveReportDto saveReport);
