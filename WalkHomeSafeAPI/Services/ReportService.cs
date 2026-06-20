@@ -16,6 +16,15 @@ namespace WalkHomeSafeAPI.Services
             return ProjectToDto(entities).ToList();
         }
 
+        public IReadOnlyCollection<ReportDto> GetReportsByUser(AppUserContext user)
+        {
+            var userDbId = userService.GetUserIdFromDatabase(user);
+            if (userDbId == 0) return [];
+
+            var entities = GetBaseQuery(userId: userDbId);
+            return ProjectToDto(entities).ToList();
+        }
+
         public bool Create(AppUserContext user, SaveReportDto saveReport)
         {
             var userDbId = userService.GetUserIdFromDatabase(user);
@@ -98,7 +107,7 @@ namespace WalkHomeSafeAPI.Services
             return true;
         }
 
-        private IQueryable<ReportEntity> GetBaseQuery(int id = default, LocationDto? location = null)
+        private IQueryable<ReportEntity> GetBaseQuery(int id = default, int userId = default, LocationDto? location = null)
         {
             var query = context.Reports
                 .Include(r => r.User)
@@ -110,6 +119,11 @@ namespace WalkHomeSafeAPI.Services
             if (id != default)
             {
                 query = query.Where(report => report.Id == id);
+            }
+
+            if (userId != default)
+            {
+                query = query.Where(report => report.UserId == userId);
             }
 
             if (location is not null && location.Longitude.HasValue && location.Latitude.HasValue)

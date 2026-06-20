@@ -8,6 +8,8 @@ public interface IReportService
 {
     IReadOnlyCollection<ReportDto> GetAll(LocationDto location);
 
+    IReadOnlyCollection<ReportDto> GetReportsByUser(AppUserContext user);
+
     bool Create(AppUserContext user, SaveReportDto saveReport);
 
     bool Update(AppUserContext user, int id, SaveReportDto saveReport);

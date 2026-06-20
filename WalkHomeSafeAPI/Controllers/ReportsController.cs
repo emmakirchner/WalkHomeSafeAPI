@@ -24,6 +24,25 @@ public class ReportsController(IReportService reportService) : Controller
     }
 
     /// <summary>
+    /// Gets all reports created by the current user.
+    /// </summary>
+    [HttpGet("by-user")]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IReadOnlyCollection<ReportDto>))]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [Authorize]
+    public ActionResult<IReadOnlyCollection<ReportDto>> GetReportsByUser()
+    {
+        var user = User.GetUserInfo();
+        if (user == null)
+        {
+            return Unauthorized();
+        }
+
+        var result = reportService.GetReportsByUser(user);
+        return Ok(result);
+    }
+
+    /// <summary>
     /// Creates or updates a report.
     /// </summary>
     [HttpPut]
