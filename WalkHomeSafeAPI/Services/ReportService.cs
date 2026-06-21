@@ -43,8 +43,6 @@ namespace WalkHomeSafeAPI.Services
             var userDbId = userService.GetUserIdFromDatabase(user);
             if (dbEntity is null || userDbId == 0 || dbEntity.UserId != userDbId) return false;
 
-            context.Entry(dbEntity).State = EntityState.Detached;
-
             dbEntity = ProjectToEntity(userDbId, saveReport, dbEntity);
             context.Reports.Update(dbEntity);
             context.SaveChanges();
@@ -185,6 +183,8 @@ namespace WalkHomeSafeAPI.Services
                         match.Rating = incoming.Rating;
                     }
                 }
+
+                context.Entry(existing).State = EntityState.Detached;
             }
 
             return new ReportEntity
