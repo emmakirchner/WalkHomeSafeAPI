@@ -28,7 +28,9 @@ public class CategoryService(AppDbContext context) : ICategoryService
         var dbEntity = context.ReportCategories.SingleOrDefault(x => x.Id == id);
         if (dbEntity is null) return false;
 
-        dbEntity = ProjectToEntity(saveReportCategory);
+        context.Entry(dbEntity).State = EntityState.Detached;
+
+        dbEntity = ProjectToEntity(saveReportCategory, dbEntity);
         context.ReportCategories.Update(dbEntity);
         context.SaveChanges();
 
@@ -53,9 +55,10 @@ public class CategoryService(AppDbContext context) : ICategoryService
                 Name = e.Name
             });
 
-    private ReportCategoryEntity ProjectToEntity(SaveReportCategoryDto saveReportCategory)
+    private ReportCategoryEntity ProjectToEntity(SaveReportCategoryDto saveReportCategory, ReportCategoryEntity? existing = null)
             => new ReportCategoryEntity
             {
+                Id = existing?.Id ?? 0,
                 Name = saveReportCategory.Name
             };
 }

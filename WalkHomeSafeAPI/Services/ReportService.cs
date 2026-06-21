@@ -43,7 +43,9 @@ namespace WalkHomeSafeAPI.Services
             var userDbId = userService.GetUserIdFromDatabase(user);
             if (dbEntity is null || userDbId == 0 || dbEntity.UserId != userDbId) return false;
 
-            dbEntity = ProjectToEntity(userDbId, saveReport);
+            context.Entry(dbEntity).State = EntityState.Detached;
+
+            dbEntity = ProjectToEntity(userDbId, saveReport, dbEntity);
             context.Reports.Update(dbEntity);
             context.SaveChanges();
 
@@ -171,22 +173,38 @@ namespace WalkHomeSafeAPI.Services
                 DownvoteCount = e.Votes.Count(v => !v.IsUpvote)
             });
 
-        private ReportEntity ProjectToEntity(int userDbId, SaveReportDto saveReport)
-            => new ReportEntity
+        private ReportEntity ProjectToEntity(int userDbId, SaveReportDto saveReport, ReportEntity? existing = null)
+        {
+            if (existing is not null)
             {
+                foreach (var incoming in saveReport.RatingCategories)
+                {
+                    var match = existing.Ratings.FirstOrDefault(r => r.CategoryId == incoming.Id);
+                    if (match is not null)
+                    {
+                        match.Rating = incoming.Rating;
+                    }
+                }
+            }
+
+            return new ReportEntity
+            {
+                Id = existing?.Id ?? 0,
                 UserId = userDbId,
                 Title = saveReport.Title,
                 Description = saveReport.Description,
                 Latitude = saveReport.Latitude,
                 Longitude = saveReport.Longitude,
                 Location = new Point(saveReport.Longitude, saveReport.Latitude) { SRID = 4326 },
-                CreatedAt = DateTime.UtcNow,
-                Ratings = saveReport.RatingCategories
+                CreatedAt = existing?.CreatedAt ?? DateTime.UtcNow,
+                UpdatedAt = existing is not null ? DateTime.UtcNow : null,
+                Ratings = existing?.Ratings ?? saveReport.RatingCategories
                     .Select(r => new ReportRatingEntity
                     {
                         CategoryId = context.ReportCategories.SingleOrDefault(c => c.Name == r.Name)?.Id ?? 0,
                         Rating = r.Rating
                     }).ToList()
             };
+        }
     }
 }
