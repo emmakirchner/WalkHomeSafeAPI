@@ -56,6 +56,7 @@ namespace WalkHomeSafeAPI.Services
             var userDbId = userService.GetUserIdFromDatabase(user);
             if (dbEntity is null || userDbId == 0 || dbEntity.UserId != userDbId) return false;
 
+            context.Reports.Attach(dbEntity);
             context.Reports.Remove(dbEntity);
             context.SaveChanges();
 
@@ -129,7 +130,7 @@ namespace WalkHomeSafeAPI.Services
                 .Include(r => r.Ratings)
                 .ThenInclude(r => r.Category)
                 .Include(r => r.Votes)
-                .AsQueryable();
+                .AsNoTracking();
 
             if (id != default)
             {
@@ -173,20 +174,6 @@ namespace WalkHomeSafeAPI.Services
 
         private ReportEntity ProjectToEntity(int userDbId, SaveReportDto saveReport, ReportEntity? existing = null)
         {
-            if (existing is not null)
-            {
-                foreach (var incoming in saveReport.RatingCategories)
-                {
-                    var match = existing.Ratings.FirstOrDefault(r => r.CategoryId == incoming.Id);
-                    if (match is not null)
-                    {
-                        match.Rating = incoming.Rating;
-                    }
-                }
-
-                context.Entry(existing).State = EntityState.Detached;
-            }
-
             return new ReportEntity
             {
                 Id = existing?.Id ?? 0,
@@ -198,12 +185,23 @@ namespace WalkHomeSafeAPI.Services
                 Location = new Point(saveReport.Longitude, saveReport.Latitude) { SRID = 4326 },
                 CreatedAt = existing?.CreatedAt ?? DateTime.UtcNow,
                 UpdatedAt = existing is not null ? DateTime.UtcNow : null,
-                Ratings = existing?.Ratings ?? saveReport.RatingCategories
-                    .Select(r => new ReportRatingEntity
+                Ratings = existing is not null
+                    ? saveReport.RatingCategories.Select(category =>
                     {
-                        CategoryId = context.ReportCategories.SingleOrDefault(c => c.Name == r.Name)?.Id ?? 0,
-                        Rating = r.Rating
+                        var existingRating = existing.Ratings.FirstOrDefault(r => r.CategoryId == category.Id);
+                        return new ReportRatingEntity
+                        {
+                            Id = existingRating?.Id ?? 0,
+                            CategoryId = category.Id,
+                            Rating = category.Rating
+                        };
                     }).ToList()
+                    : saveReport.RatingCategories
+                        .Select(category => new ReportRatingEntity
+                        {
+                            CategoryId = context.ReportCategories.SingleOrDefault(c => c.Name == category.Name)?.Id ?? 0,
+                            Rating = category.Rating
+                        }).ToList()
             };
         }
     }
