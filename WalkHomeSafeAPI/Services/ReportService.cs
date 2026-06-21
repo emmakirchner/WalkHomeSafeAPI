@@ -185,23 +185,17 @@ namespace WalkHomeSafeAPI.Services
                 Location = new Point(saveReport.Longitude, saveReport.Latitude) { SRID = 4326 },
                 CreatedAt = existing?.CreatedAt ?? DateTime.UtcNow,
                 UpdatedAt = existing is not null ? DateTime.UtcNow : null,
-                Ratings = existing is not null
-                    ? saveReport.RatingCategories.Select(category =>
+                Ratings = saveReport.RatingCategories.Select(category =>
+                {
+                    var existingRating = existing?.Ratings.FirstOrDefault(r => r.Category != null && r.Category.Name == category.Name);
+                    return new ReportRatingEntity
                     {
-                        var existingRating = existing.Ratings.FirstOrDefault(r => r.CategoryId == category.Id);
-                        return new ReportRatingEntity
-                        {
-                            Id = existingRating?.Id ?? 0,
-                            CategoryId = category.Id,
-                            Rating = category.Rating
-                        };
-                    }).ToList()
-                    : saveReport.RatingCategories
-                        .Select(category => new ReportRatingEntity
-                        {
-                            CategoryId = context.ReportCategories.SingleOrDefault(c => c.Name == category.Name)?.Id ?? 0,
-                            Rating = category.Rating
-                        }).ToList()
+                        Id = existingRating?.Id ?? 0,
+                        ReportId = existing?.Id ?? 0,
+                        CategoryId = context.ReportCategories.SingleOrDefault(c => c.Name == category.Name)?.Id ?? 0,
+                        Rating = category.Rating
+                    };
+                }).ToList()
             };
         }
     }
