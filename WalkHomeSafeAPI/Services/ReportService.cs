@@ -52,11 +52,10 @@ namespace WalkHomeSafeAPI.Services
 
         public bool Delete(AppUserContext user, int id)
         {
-            var dbEntity = GetBaseQuery(id).SingleOrDefault();
+            var dbEntity = context.Reports.Find(id);
             var userDbId = userService.GetUserIdFromDatabase(user);
             if (dbEntity is null || userDbId == 0 || dbEntity.UserId != userDbId) return false;
 
-            context.Reports.Attach(dbEntity);
             context.Reports.Remove(dbEntity);
             context.SaveChanges();
 
