@@ -143,8 +143,9 @@ namespace WalkHomeSafeAPI.Services
 
             if (location is not null && location.Longitude.HasValue && location.Latitude.HasValue)
             {
-                var point = new Point(location.Longitude.Value, location.Latitude.Value);
-                query = query.Where(report => report.Location != null && report.Location.Distance(point) <= location.RadiusInMeters);
+                var radius = location.RadiusInMeters ?? 1000;
+                var point = new Point(location.Longitude.Value, location.Latitude.Value) { SRID = 4326 };
+                query = query.Where(report => report.Location != null && report.Location.Distance(point) <= radius);
             }
 
             return query;
